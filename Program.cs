@@ -1,32 +1,33 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace AutoAddScriptsToJson
 {
 	internal class Program
 	{
-		public string ModFolderPath;
-		public string ModJsonPath;
+		private string ModFolderPath;
+		private string ModJsonPath;
 
 		public const string ModJsonName = "mod.json";
 		public const string ModJsonScriptsPropertyName = "Scripts";
 		public const string ScriptsExtension = ".cs";
 
-		public static readonly string[] IgnoredPaths = new string[]
-		{
-			"obj/",
-		};
+		public const string IgnoredPathsFileName = "IgnoredPaths.txt";
+		public string[] IgnoredPaths;
 
 		public static void Main(string[] args)
 		{
 			new Program();
 		}
-		
+
 		public Program()
 		{
+			LoadIgnoredPaths();
 			WriteInfo();
 			Console.SetError(new ConsoleErrorWriterDecorator(Console.Error));
 
@@ -77,17 +78,50 @@ namespace AutoAddScriptsToJson
 			Environment.Exit(0);
 		}
 
+		private void LoadIgnoredPaths()
+		{
+			try
+			{
+				string ignoredPathsFilePath = Path.Combine(Environment.CurrentDirectory, IgnoredPathsFileName);
+				if (File.Exists(ignoredPathsFilePath))
+				{
+					IgnoredPaths = File.ReadAllLines(ignoredPathsFilePath);
+					return;
+				}
+				else
+				{
+					File.Create(ignoredPathsFilePath);
+				}
+			}
+			catch (Exception)
+			{
+			}
+			IgnoredPaths = Array.Empty<string>();
+		}
 		public void WriteInfo()
 		{
 			Console.WriteLine("Info:");
-			Console.WriteLine($" {nameof(ModJsonName)}: {ModJsonName}");
-			Console.WriteLine($" {nameof(ModJsonScriptsPropertyName)}: {ModJsonScriptsPropertyName}");
-			Console.WriteLine($" {nameof(ScriptsExtension)}: {ScriptsExtension}");
+			FieldInfo[] fields = GetType().GetFields();
+			Array.Sort(fields, (FieldInfo x, FieldInfo y) => -x.Name.CompareTo(y.Name));
 
-			Console.WriteLine($" {nameof(IgnoredPaths)}:");
-			for (int i = 0; i < IgnoredPaths.Length; i++)
+			for (int i = 0; i < fields.Length; i++)
 			{
-				Console.WriteLine("\t" + IgnoredPaths[i]);
+				FieldInfo field = fields[i];
+				Console.Write($" {field.Name}: ");
+
+				if (typeof(IList).IsAssignableFrom(field.FieldType))
+				{
+					Console.WriteLine();
+					IList list = (IList)field.GetValue(this);
+					for (int j = 0; j < list.Count; j++)
+					{
+						Console.WriteLine($"  {list[j]?.ToString()}");
+					}
+				}
+				else
+				{
+					Console.WriteLine(field.GetValue(this));
+				}
 			}
 			ConsoleUtils.WriteDividingLine();
 		}
