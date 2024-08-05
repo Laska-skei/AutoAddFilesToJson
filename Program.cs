@@ -130,7 +130,7 @@ namespace AutoAddScriptsToJson
 		public IEnumerable<string> GetScriptsInModFolder()
 		{
 			return Directory.EnumerateFiles(ModFolderPath, "*" + ScriptsExtension, SearchOption.AllDirectories)
-				.Select((string filePath) => filePath.Remove(0, ModFolderPath.Length + 1).Replace('\\', '/'))
+				.Select((string filePath) => filePath.Remove(0, ModFolderPath.Length).Replace('\\', '/'))
 				.Where((string filePath) => !IgnoredPaths.Any(filePath.StartsWith));
 		}
 		public static void WriteDifference(in string[] oldCollection, in string[] newCollection)
