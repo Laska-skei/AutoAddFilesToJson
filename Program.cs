@@ -130,7 +130,7 @@ namespace AutoAddScriptsToJson
 		public IEnumerable<string> GetScriptsInModFolder()
 		{
 			return Directory.EnumerateFiles(ModFolderPath, "*" + ScriptsExtension, SearchOption.AllDirectories)
-				.Select((string filePath) => filePath.Remove(0, ModFolderPath.Length).Replace('\\', '/'))
+				.Select((string filePath) => FormatPath(filePath.Remove(0, ModFolderPath.Length)))
 				.Where((string filePath) => !IgnoredPaths.Any(filePath.StartsWith));
 		}
 		public static void WriteDifference(in string[] oldCollection, in string[] newCollection)
@@ -191,15 +191,23 @@ namespace AutoAddScriptsToJson
 				}
 			}
 		}
-		/// <summary>
-		/// Replace all <b>\</b> to <b>/</b> in <paramref name="paths"/>.
-		/// </summary>
+
+		public static string FormatPath(string path)
+		{
+			path = path.Replace('\\', '/');
+			if (path[0] == '/')
+			{
+				path = path.Remove(0, 1);
+			}
+			return path;
+		}
 		public static void FormatPaths(string[] paths)
 		{
 			for (int i = 0; i < paths.Length; i++)
 			{
-				paths[i] = paths[i].Replace('\\', '/');
+				paths[i] = FormatPath(paths[i]);
 			}
 		}
+		public static IEnumerable<string> FormatPaths(IEnumerable<string> paths) => from path in paths select FormatPath(path);
 	}
 }
